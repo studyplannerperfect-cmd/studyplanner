@@ -13,6 +13,7 @@ import GroupStudy from './components/GroupStudy';
 import StudyStatus from './components/StudyStatus';
 import Notes from './components/Notes';
 import Admin from './components/Admin';
+import ModeratorPanel from './components/ModeratorPanel';
 import PasswordReset from './components/PasswordReset';
 import ProtectedRoute from './components/ProtectedRoute';
 
