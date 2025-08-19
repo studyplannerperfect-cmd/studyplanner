@@ -18,6 +18,7 @@ const Sidebar: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userRole, setUserRole] = useState<string>('user');
+  const [userRole, setUserRole] = useState<string>('user');
 
   // Load unread notifications count
   React.useEffect(() => {
