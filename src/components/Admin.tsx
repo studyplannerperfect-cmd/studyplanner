@@ -1,93 +1,107 @@
-import React, { useState } from 'react';
-import { Mail, MessageSquare } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { Mail, Phone, MessageSquare } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { supabase } from '../lib/supabase';
+import Sidebar from './Sidebar';
 
-interface ContactFormProps {
-  onClose: () => void;
-  onSuccess: () => void;
+interface Complaint {
+  id: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+  status: 'pending' | 'resolved';
+  created_at: string;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({ onClose, onSuccess }) => {
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+}
+
+const Admin: React.FC = () => {
   const { isDarkMode } = useTheme();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !message) {
-      setError('Please fill in all fields');
-      return;
-    }
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: complaintsData } = await supabase
+        .from('complaints')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    setLoading(true);
-    setError('');
+      const { data: contactsData } = await supabase
+        .from('contacts')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    try {
-      const { error } = await supabase.from('contacts').insert([
-        {
-          name,
-          email,
-          message,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) throw error;
-
-      setName('');
-      setEmail('');
-      setMessage('');
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
-    } finally {
+      if (complaintsData) setComplaints(complaintsData as Complaint[]);
+      if (contactsData) setContacts(contactsData as Contact[]);
       setLoading(false);
-    }
-  };
+    };
+
+    fetchData();
+  }, []);
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={`p-4 rounded-xl shadow-lg ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
-    >
-      <h2 className="text-xl font-bold mb-4">Contact Us</h2>
-      {error && <p className="text-red-500 mb-2">{error}</p>}
+    <div className={`flex ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+      <Sidebar />
+      <div className="flex-1 p-6">
+        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      <input
-        type="text"
-        placeholder="Your Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full p-2 mb-2 border rounded"
-      />
-      <input
-        type="email"
-        placeholder="Your Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full p-2 mb-2 border rounded"
-      />
-      <textarea
-        placeholder="Your Message"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        className="w-full p-2 mb-2 border rounded"
-      />
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-400 text-white rounded">
-          Cancel
-        </button>
-        <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">
-          {loading ? 'Sending...' : 'Send'}
-        </button>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Complaints Section */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Complaints</h2>
+              {complaints.length === 0 ? (
+                <p>No complaints found.</p>
+              ) : (
+                <ul>
+                  {complaints.map((c) => (
+                    <li key={c.id} className="border p-4 mb-2 rounded">
+                      <p><Mail className="inline w-4 h-4" /> {c.email}</p>
+                      <p><Phone className="inline w-4 h-4" /> {c.phone}</p>
+                      <p><MessageSquare className="inline w-4 h-4" /> {c.subject}</p>
+                      <p>{c.message}</p>
+                      <span className="text-sm text-gray-500">Status: {c.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Contact Us Section */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Contact Messages</h2>
+              {contacts.length === 0 ? (
+                <p>No messages yet.</p>
+              ) : (
+                <ul>
+                  {contacts.map((c) => (
+                    <li key={c.id} className="border p-4 mb-2 rounded">
+                      <p><b>{c.name}</b> ({c.email})</p>
+                      <p>{c.message}</p>
+                      <span className="text-sm text-gray-500">
+                        {new Date(c.created_at).toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    </form>
+    </div>
   );
 };
 
-export default ContactForm;
+export default Admin;
