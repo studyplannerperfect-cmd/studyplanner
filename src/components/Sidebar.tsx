@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, BookOpen, LogOut, Heart, X, Users, Eye, Moon, Sun, FileText, AlertCircle, User, Bell, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, Calendar, BookOpen, LogOut, Heart, X, Users, Eye, Moon, Sun, FileText, AlertCircle, User, Bell, MessageCircle, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -17,6 +17,7 @@ const Sidebar: React.FC = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userRole, setUserRole] = useState<string>('user');
 
   // Load unread notifications count
   React.useEffect(() => {
@@ -37,6 +38,13 @@ const Sidebar: React.FC = () => {
     }
   }, [user]);
 
+  // Load user role
+  React.useEffect(() => {
+    if (user) {
+      loadUserRole();
+    }
+  }, [user]);
+
   const loadUnreadCount = async () => {
     if (!user) return;
 
@@ -51,6 +59,29 @@ const Sidebar: React.FC = () => {
       setUnreadCount(count || 0);
     } catch (error) {
       console.error('Error loading unread count:', error);
+    }
+  };
+
+  const loadUserRole = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        // If no role found, default to 'user'
+        setUserRole('user');
+        return;
+      }
+
+      setUserRole(data?.role || 'user');
+    } catch (error) {
+      console.error('Error loading user role:', error);
+      setUserRole('user');
     }
   };
 
